@@ -16,7 +16,7 @@ ActiveRecord::Schema.define(version: 2021_02_19_000603) do
   enable_extension "plpgsql"
 
   create_table "products", force: :cascade do |t|
-    t.string "price_list"
+    t.string "price_list", null: false
     t.string "brand", null: false
     t.string "code", null: false
     t.integer "stock", default: 0, null: false
@@ -24,6 +24,7 @@ ActiveRecord::Schema.define(version: 2021_02_19_000603) do
     t.string "name"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.index ["price_list", "brand", "code"], name: "index_list_brand_code_uniqueness", unique: true
   end
 
 end
