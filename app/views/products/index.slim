@@ -1,0 +1,28 @@
+h1 Import of products from CSV-file
+= form_with url: import_products_path, multipart: true, remote: true do |form|
+  = form.label  :file, 'File' 
+  = form.file_field :file 
+  = form.submit 'Upload'
+
+table class="table table-striped"
+  thead
+    th class="text-center text-tiny" 
+      h3 id
+    th class="text-center text-tiny" 
+      h3 created_at
+    th class="text-center text-tiny" 
+      h3 price_list
+    th class="text-center text-tiny" 
+      h3 brand
+    th class="text-center text-tiny" 
+      h3 code
+    th class="text-center text-tiny" 
+      h3 stock
+    th class="text-center text-tiny" 
+      h3 cost
+    th class="text-center text-tiny" 
+      h3 name
+
+  tbody
+    = render partial: "lst_product", collection: @products
+
