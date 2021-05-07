@@ -25,11 +25,11 @@ class Product < ApplicationRecord
                         liberal_parsing: true, 
                         col_sep: col_del
                        ) do |row|
-              # begin
+              begin
                 import_action(row.to_hash, price_list)
-              # rescue 
-              #   # ignore record
-              # end
+              rescue 
+                # ignore record
+              end
             end
           rescue CSV::MalformedCSVError
             CSV.foreach(file.path, 
@@ -38,11 +38,11 @@ class Product < ApplicationRecord
                         encoding: 'CP1251:utf-8', 
                         col_sep: col_del
                        ) do |row|
-              # begin
+              begin
                 import_action(row.to_hash, price_list)
-              # rescue 
-              #   # ignore record
-              # end
+              rescue 
+                # ignore record
+              end
             end
           end
         end 
