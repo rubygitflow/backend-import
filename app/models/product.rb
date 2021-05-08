@@ -1,6 +1,23 @@
 class Product < ApplicationRecord
   QUOTE_CHAR = '^'.freeze    
   COLUMNS = "price_list, brand, code, stock, cost, name, created_at, updated_at".freeze
+  CODE_CONVERTER = {
+    'utf-8' => "UTF-8",
+    'UTF-8' => "UTF-8",
+    'windows-1251' => 'CP1251:utf-8'
+  }.freeze
+  COLUMN_PARSER = {
+    'Производитель' => "brand",
+    'Бренд' => "brand",
+    'Артикул' => 'code',
+    "﻿\"Артикул\"" => 'code',
+    'Номер' => 'code',
+    'Кол-во' => "stock",
+    'Количество' => "stock",
+    'Цена' => "cost",
+    'Наименование' => "name",
+    'НаименованиеТовара' => "name",
+  }.freeze
 
 	def self.import(file)
     mem_usage_before = print_memory if Rails.env.development?
@@ -16,33 +33,20 @@ class Product < ApplicationRecord
 
         strVar = File.open(file.path, &:readline)
         col_del = strVar.index(';').nil? ? ',' : ';'
+        char_detect = CharDet.detect(strVar)
 
         raw_connection.copy_data products_command do
-          begin
-            # https://ruby-doc.org/stdlib-2.7.2/libdoc/csv/rdoc/CSV.html
-            CSV.foreach(file.path, 
-                        headers: :first_row, 
-                        liberal_parsing: true, 
-                        col_sep: col_del
-                       ) do |row|
-              begin
-                import_action(row.to_hash, price_list)
-              rescue 
-                # ignore record
-              end
-            end
-          rescue CSV::MalformedCSVError
-            CSV.foreach(file.path, 
-                        headers: :first_row, 
-                        liberal_parsing: true, 
-                        encoding: 'CP1251:utf-8', 
-                        col_sep: col_del
-                       ) do |row|
-              begin
-                import_action(row.to_hash, price_list)
-              rescue 
-                # ignore record
-              end
+          # https://ruby-doc.org/stdlib-2.7.2/libdoc/csv/rdoc/CSV.html
+          CSV.foreach(file.path, 
+                      headers: :first_row, 
+                      liberal_parsing: true, 
+                      encoding: CODE_CONVERTER[char_detect['encoding']], 
+                      col_sep: col_del
+                     ) do |row|
+            begin
+              import_action(row.to_hash, price_list)
+            rescue 
+              # ignore record
             end
           end
         end 
@@ -67,28 +71,21 @@ class Product < ApplicationRecord
   end
 
   def self.import_action(input_hash, file_name)
-    hsh = {}
-    hsh['brand'] = input_hash['Производитель'] || input_hash['Бренд']
-    hsh['code'] = input_hash['Артикул'] || 
-                  input_hash["﻿\"Артикул\""] || input_hash['Номер']
-
+    # парсим данные
+    hsh = input_hash.transform_keys {|k| COLUMN_PARSER[k] }
+    # только для разрешённых записей
     if !hsh['brand'].empty? && !hsh['code'].empty? 
-      hsh['price_list'] = file_name
-      hsh['stock'] = input_hash['Количество'] || input_hash['Кол-во']
+      # дополнительные условия
       hsh['stock'] = hsh['stock'].index('>').nil? ? 
         hsh['stock'] : hsh['stock'].gsub('>', '')
       hsh['cost'] = input_hash['Цена'].tr(',', '.')
-      hsh['name'] = input_hash['Наименование'] || 
-                    input_hash['НаименованиеТовара']
-
+      # недостающие данные
       time = Time.now.localtime.strftime("%Y-%m-%d %H:%M:%S")
-
       # стримим подготовленный чанк данных в postgres 
-      s = "#{hsh['price_list']};#{hsh['brand']};#{hsh['code']};#{hsh['stock']};#{hsh['cost']};#{hsh['name']};#{time};#{time}\n"
+      s = "#{file_name};#{hsh['brand']};#{hsh['code']};#{hsh['stock']};#{hsh['cost']};#{hsh['name']};#{time};#{time}\n"
       raw_connection.put_copy_data(s)
     end 
   end
-
 
   def self.memory
     `ps -o rss= -p #{Process.pid}`.to_i
@@ -99,5 +96,4 @@ class Product < ApplicationRecord
     puts "Memory: #{m} KB"
     m
   end
-
 end
