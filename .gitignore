@@ -21,6 +21,10 @@
 # Ignore uploaded files in development.
 /storage/*
 !/storage/.keep
+!/storage/price_1.csv
+!/storage/price_2.csv
+!/storage/price_3.csv
+
 
 /public/assets
 .byebug_history
