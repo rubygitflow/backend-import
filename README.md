@@ -12,4 +12,4 @@ Cкрипт импорта товаров из csv-файлов в базу да
 
 Коллекция файлов для тестовой проверки программы находится в папке storage.
 
-Детали технического задания представлены в [файле](https://github.com/rubygitflow/backend-import/TZ_Backend_Import.odt).
+Детали технического задания представлены в [файле](https://github.com/rubygitflow/backend-import/blob/0cb92b83b6adc7697dc244630311200962387163/TZ_Backend_Import.odt).
